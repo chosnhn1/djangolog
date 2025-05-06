@@ -3,38 +3,44 @@ from django.shortcuts import render, get_object_or_404
 from django.http import Http404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.generic import ListView
+from django.db.models import Count
 from django.core.mail import send_mail
 from django.views.decorators.http import require_POST
 from .models import Post, Comment
 from .forms import EmailPostForm, CommentForm
+from taggit.models import Tag
 
 # function-based view
-# def post_list(request):
-#     post_list = Post.published.all()
-#     # do pagination
-#     paginator = Paginator(post_list, 3)
-#     page_number = request.GET.get('page', 1)
+def post_list(request, tag_slug=None):
+    post_list = Post.published.all()
+    tag = None
+    if tag_slug:
+        tag = get_object_or_404(Tag, slug=tag_slug)
+        post_list = post_list.filter(tags__in=[tag])
+    # do pagination
+    paginator = Paginator(post_list, 3)
+    page_number = request.GET.get('page', 1)
 
-#     # add page validation
-#     try:
-#         posts = paginator.page(page_number)
-#     except PageNotAnInteger:
-#         # return first page if got not integer
-#         posts = paginator.page(1)
-#     except EmptyPage:
-#         # return final page if page is blank
-#         posts = paginator.page(paginator.num_pages)
+    # add page validation
+    try:
+        posts = paginator.page(page_number)
+    except PageNotAnInteger:
+        # return first page if got not integer
+        posts = paginator.page(1)
+    except EmptyPage:
+        # return final page if page is blank
+        posts = paginator.page(paginator.num_pages)
     
 
-#     # posts = paginator.page(page_number)
-#     return render(request, 'blog/post/list.html', {'posts': posts})
+    # posts = paginator.page(page_number)
+    return render(request, 'blog/post/list.html', {'posts': posts, 'tag': tag, })
 
 # class-based view
-class PostListView(ListView):
-    queryset = Post.published.all()
-    context_object_name = 'posts'
-    paginate_by = 3
-    template_name = 'blog/post/list.html'
+# class PostListView(ListView):
+#     queryset = Post.published.all()
+#     context_object_name = 'posts'
+#     paginate_by = 3
+#     template_name = 'blog/post/list.html'
 
 # before url optimization:
 # def post_detail(request, id):
@@ -48,10 +54,24 @@ def post_detail(request, year, month, day, post):
     # except Post.DoesNotExist:
     #     raise Http404("No Post found.")
 
+    # Comments part
     comments = post.comments.filter(active=True)
     form = CommentForm()
 
-    return render(request, 'blog/post/detail.html', {'post': post, 'comments': comments, 'form': form})
+    # Tag and recommendation part
+    post_tags_ids = post.tags.values_list('id', flat=True)
+    similar_posts = Post.published.filter(tags__in=post_tags_ids).exclude(id=post.id)
+    similar_posts = similar_posts.annotate(same_tags=Count('tags')).order_by('-same_tags', '-publish')[:4]
+
+    # build context
+    context = {
+        'post': post,
+        'comments': comments,
+        'form': form,
+        'similar_posts': similar_posts
+    }
+
+    return render(request, 'blog/post/detail.html', context=context)
 
 def post_share(request, post_id):
     post = get_object_or_404(Post, id=post_id, status=Post.Status.PUBLISHED)
