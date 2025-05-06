@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .feeds import LatestPostFeed
 
 app_name = 'blog'
 urlpatterns = [
@@ -16,4 +17,7 @@ urlpatterns = [
 
     # comment form
     path('<int:post_id>/comment/', views.post_comment, name='post_comment'),
+
+    # RSS feed
+    path('feed/', LatestPostFeed(), name='post_feed'),
 ]
