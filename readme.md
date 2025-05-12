@@ -23,6 +23,5 @@
     * `EMAIL_HOST_PASSWORD`
 
 ### Postgresql DB
-* via Docker Container: set DB port to 5432:5432
-* Postgresql User: ``blog``
-
+* via Docker Container: set DB port to `5432:5432`
+* Postgresql User & Database name: `blog`
