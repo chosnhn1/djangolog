@@ -12,7 +12,7 @@
 ### Setup Python Dependencies
 * ``pip install -r requirements.txt``
 
-### [Enviroment](.env)
+### [Environment](.env)
 * For Django Project settings
     * `DJANGO_SECRET_KEY`
 * For connecting DB
