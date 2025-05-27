@@ -25,5 +25,3 @@
 ### Postgresql DB
 * via Docker Container: set DB port to `5432:5432`
 * Postgresql User & Database name: `blog`
-
-### Others
